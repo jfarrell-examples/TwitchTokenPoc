@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.IdentityModel.Tokens;
@@ -23,18 +25,19 @@ namespace TwitchTokenPoc.Services
             var jwtSigningKey = await _keyVaultService.GetJwtSigningKey();
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey));
             var signingCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
-            var header = new JwtHeader(signingCredentials);
-            var payload = new JwtPayload
-            {
-                { "accessToken", accessToken },
-                { "refreshToken", refreshToken }
-            };
+            var secToken = new JwtSecurityToken(
+                issuer: "https://localhost:5001",
+                audience: "https://localhost",
+                claims: new List<Claim>
+                {
+                    new Claim("accessToken", accessToken),
+                    new Claim("refreshToken", refreshToken)
+                },
+                notBefore: null,
+                expires: DateTime.Now.AddDays(1),
+                signingCredentials);
             
-            var secToken = new JwtSecurityToken(header, payload);
-            var handler = new JwtSecurityTokenHandler();
-
-            // Token to String so you can use it in your client
-            return handler.WriteToken(secToken);
+            return new JwtSecurityTokenHandler().WriteToken(secToken);
         }
 
         public async Task<Tuple<string, string>> GetTokensFromTokenString(string tokenString)

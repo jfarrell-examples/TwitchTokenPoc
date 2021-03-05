@@ -1,7 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Security.Principal;
+using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -10,6 +15,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using TwitchTokenPoc.Services;
 
@@ -27,22 +33,32 @@ namespace TwitchTokenPoc
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
             services.AddControllers();
 
             services.AddTransient<CryptoService>()
                 .AddTransient<JwtTokenService>()
                 .AddTransient<TwitchAuthService>()
                 .AddTransient<KeyVaultService>()
+                .AddTransient<JwtSecurityTokenValidator>()
                 .AddSingleton<GetCredentialService>();
             
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "TwitchTokenPoc", Version = "v1" });
             });
-        }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    // using service locator pattern
+                    // dependency registration must occur before this
+                    var provider = services.BuildServiceProvider();
+                    
+                    options.RequireHttpsMetadata = false;
+                    options.SecurityTokenValidators.Add(provider.GetRequiredService<JwtSecurityTokenValidator>());
+                });
+        }
+        
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -55,7 +71,7 @@ namespace TwitchTokenPoc
             app.UseHttpsRedirection();
 
             app.UseRouting();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

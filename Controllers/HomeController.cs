@@ -9,6 +9,7 @@ using Azure.Identity;
 using Azure.Security.KeyVault.Keys;
 using Azure.Security.KeyVault.Keys.Cryptography;
 using Azure.Security.KeyVault.Secrets;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
@@ -42,14 +43,16 @@ namespace TwitchTokenPoc.Controllers
             return Ok(jwtTokenString);
         }
         
-        public async Task<IActionResult> Get([FromHeader(Name = "X-Token")]string tokenString)
+        [Authorize]
+        public async Task<IActionResult> Get()
         {
-            var (decryptedAccessToken, decryptedRefreshToken) = await _jwtTokenService.GetTokensFromTokenString(tokenString);
+            var encryptedAccessToken = HttpContext.User.Claims.FirstOrDefault(x => x.Type == "accessToken");
+            var encryptedRefreshToken = HttpContext.User.Claims.FirstOrDefault(x => x.Type == "refreshToken");
 
             return Ok(new
             {
-                decryptedAccessToken,
-                decryptedRefreshToken
+                a_t = await _cryptoService.Decrypt(encryptedAccessToken.Value),
+                r_t = await _cryptoService.Decrypt(encryptedRefreshToken.Value)
             });
         }
     }
