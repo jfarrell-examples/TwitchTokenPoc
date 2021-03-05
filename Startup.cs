@@ -35,11 +35,13 @@ namespace TwitchTokenPoc
         {
             services.AddControllers();
 
+            var keyVaultService = new KeyVaultService(new GetCredentialService(Configuration), Configuration);
+            var tokenSecurityValidator = new JwtSecurityTokenValidator(Configuration, keyVaultService);
             services.AddTransient<CryptoService>()
                 .AddTransient<JwtTokenService>()
                 .AddTransient<TwitchAuthService>()
-                .AddTransient<KeyVaultService>()
-                .AddTransient<JwtSecurityTokenValidator>()
+                .AddSingleton(p => keyVaultService)
+                .AddTransient(p => tokenSecurityValidator)
                 .AddSingleton<GetCredentialService>();
             
             services.AddSwaggerGen(c =>
@@ -50,12 +52,8 @@ namespace TwitchTokenPoc
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
-                    // using service locator pattern
-                    // dependency registration must occur before this
-                    var provider = services.BuildServiceProvider();
-                    
                     options.RequireHttpsMetadata = false;
-                    options.SecurityTokenValidators.Add(provider.GetRequiredService<JwtSecurityTokenValidator>());
+                    options.SecurityTokenValidators.Add(tokenSecurityValidator);
                 });
         }
         
