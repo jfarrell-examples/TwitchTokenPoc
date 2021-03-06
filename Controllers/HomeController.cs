@@ -12,38 +12,31 @@ namespace TwitchTokenPoc.Controllers
     public class HomeController : ControllerBase
     {
         private readonly TwitchAuthService _authService;
-        private readonly CryptoService _cryptoService;
         private readonly JwtTokenService _jwtTokenService;
+        private readonly TwitchApiService _twitchClient;
 
-        public HomeController(TwitchAuthService authService, JwtTokenService jwtTokenService, CryptoService cryptoService)
+        public HomeController(TwitchAuthService authService, JwtTokenService jwtTokenService, TwitchApiService twitchApiService)
         {
             _authService = authService;
             _jwtTokenService = jwtTokenService;
-            _cryptoService = cryptoService;
+            _twitchClient = twitchApiService;
         }
         
         [HttpGet("callback")]
         public async Task<IActionResult> Callback(string code)
         {
             var (accessToken, refreshToken) = await _authService.GetTokensForCode(code);
-            var encodedAccessToken = await _cryptoService.Encrypt(accessToken);
-            var encodedRefreshToken = await _cryptoService.Encrypt(refreshToken);
-
-            var jwtTokenString = await _jwtTokenService.CreateJwtTokenString(encodedAccessToken, encodedRefreshToken);
+            var jwtTokenString = await _jwtTokenService.CreateJwtTokenString(accessToken, refreshToken);
             return Ok(jwtTokenString);
         }
         
         [Authorize]
-        public async Task<IActionResult> Get()
+        [HttpGet("user")]
+        public async Task<IActionResult> GetUser()
         {
-            var encryptedAccessToken = HttpContext.User.Claims.FirstOrDefault(x => x.Type == "accessToken");
-            var encryptedRefreshToken = HttpContext.User.Claims.FirstOrDefault(x => x.Type == "refreshToken");
+            var twitchUser = await _twitchClient.GetUser("jfarrell1983");
 
-            return Ok(new
-            {
-                a_t = await _cryptoService.Decrypt(encryptedAccessToken.Value),
-                r_t = await _cryptoService.Decrypt(encryptedRefreshToken.Value)
-            });
+            return Ok(twitchUser);
         }
     }
 }

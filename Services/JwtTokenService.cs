@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -33,8 +32,8 @@ namespace TwitchTokenPoc.Services
                 audience: _configuration["Audience"],
                 claims: new List<Claim>
                 {
-                    new Claim("accessToken", accessToken),
-                    new Claim("refreshToken", refreshToken)
+                    new Claim("accessToken", await _cryptoService.Encrypt(accessToken)),
+                    new Claim("refreshToken", await _cryptoService.Encrypt(refreshToken))
                 },
                 notBefore: null,
                 expires: DateTime.Now.AddDays(1),

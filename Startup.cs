@@ -27,11 +27,14 @@ namespace TwitchTokenPoc
             var tokenSecurityValidator = new JwtSecurityTokenValidator(Configuration, keyVaultService);
             services.AddTransient<CryptoService>()
                 .AddTransient<JwtTokenService>()
-                .AddTransient<TwitchAuthService>()
+                .AddSingleton<TwitchAuthService>()
                 .AddSingleton(p => keyVaultService)
                 .AddTransient(p => tokenSecurityValidator)
-                .AddSingleton<GetCredentialService>();
-            
+                .AddSingleton<GetCredentialService>()
+                .AddTransient<TwitchApiService>()
+                .AddTransient<GetTokensFromHttpRequestService>();
+
+            services.AddHttpContextAccessor();            
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "TwitchTokenPoc", Version = "v1" });

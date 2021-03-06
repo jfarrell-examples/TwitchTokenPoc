@@ -9,13 +9,8 @@ namespace TwitchTokenPoc.Services
 {
     public class KeyVaultService
     {
-        private const string SigningKeyKeyName = "jwtSigningKey";
-        private const string EncryptionKeyKeyName = "encryptionKey";
-        
         private readonly GetCredentialService _getCredentialService;
         private readonly IConfiguration _configuration;
-        
-        private readonly IDictionary<string, string> _keyCache = new Dictionary<string, string>();
 
         public KeyVaultService(GetCredentialService getCredentialService, IConfiguration configuration)
         {
