@@ -1,10 +1,15 @@
 namespace TwitchTokenPoc
 {
-    public class ApiResult<TInnerResult>
+    public abstract class ApiResult
     {
-        public TInnerResult Result { get; set; }
         public bool TokensChanged { get; set; }
         public string NewAccessToken { get; set; }
         public string NewRefreshToken { get; set; }
+        public object Result { get; protected set; }
+    }
+    
+    public class ApiResult<TInnerResult> : ApiResult
+    {
+        public void SetResult(TInnerResult value) => this.Result = value;
     }
 }

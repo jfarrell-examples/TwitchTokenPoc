@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -21,7 +22,10 @@ namespace TwitchTokenPoc
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddControllers(options =>
+            {
+                options.Filters.Add(new ServiceFilterAttribute(typeof(ProcessApiResultFilter)));
+            });
 
             var keyVaultService = new KeyVaultService(new GetCredentialService(Configuration), Configuration);
             var tokenSecurityValidator = new JwtSecurityTokenValidator(Configuration, keyVaultService);
@@ -32,7 +36,8 @@ namespace TwitchTokenPoc
                 .AddTransient(p => tokenSecurityValidator)
                 .AddSingleton<GetCredentialService>()
                 .AddTransient<TwitchApiService>()
-                .AddTransient<GetTokensFromHttpRequestService>();
+                .AddTransient<GetTokensFromHttpRequestService>()
+                .AddTransient<ProcessApiResultFilter>();
 
             services.AddHttpContextAccessor();            
             services.AddSwaggerGen(c =>
@@ -62,7 +67,6 @@ namespace TwitchTokenPoc
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

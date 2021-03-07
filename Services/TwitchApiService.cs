@@ -24,10 +24,10 @@ namespace TwitchTokenPoc.Services
 
         public async Task<ApiResult<TwitchUser>> GetUser(string loginName)
         {
-            using var client = new HttpClient {BaseAddress = new System.Uri("https://api.twitch.tv")};
+            using var client = new HttpClient {BaseAddress = new Uri("https://api.twitch.tv")};
             client.DefaultRequestHeaders.Add("Client-Id", _configuration["TwitchClientId"]);
             client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", "bad-token");
+                new AuthenticationHeaderValue("Bearer", await _getTokensFromHttpRequestService.GetAccessToken());
 
             var result = new ApiResult<TwitchUser>();
             var response = await client.GetAsync($"helix/users?login={loginName}");
@@ -53,7 +53,7 @@ namespace TwitchTokenPoc.Services
                 throw new Exception("ResponseContent was empty despite successful GetUser API call");
             
             var responseJson = JObject.Parse(responseContent);
-            result.Result = responseJson["data"][0].ToObject<TwitchUser>();
+            result.SetResult(responseJson["data"][0].ToObject<TwitchUser>());
 
             return result;
         }

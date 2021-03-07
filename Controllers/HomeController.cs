@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -34,9 +33,9 @@ namespace TwitchTokenPoc.Controllers
         [HttpGet("user")]
         public async Task<IActionResult> GetUser()
         {
-            var twitchUser = await _twitchClient.GetUser("jfarrell1983");
+            var getUserResult = await _twitchClient.GetUser("jfarrell1983");
 
-            return Ok(twitchUser);
+            return Ok(getUserResult);
         }
     }
 }
